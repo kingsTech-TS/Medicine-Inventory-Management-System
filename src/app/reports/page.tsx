@@ -101,7 +101,7 @@ export default function ReportsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      
+
       {/* Navigation Header */}
       <Header />
 
@@ -113,14 +113,21 @@ export default function ReportsPage() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Left side: title + subtitle */}
             <div>
-              <h2 className="text-3xl font-serif font-bold text-gray-800 mb-2">Reports & Analytics</h2>
-              <p className="text-gray-600">Comprehensive insights into your medicine inventory performance</p>
+              <h2 className="text-3xl font-serif font-bold text-gray-800 mb-2">
+                Reports & Analytics
+              </h2>
+              <p className="text-gray-600">
+                Comprehensive insights into your medicine inventory performance
+              </p>
             </div>
-            <div className="flex items-center space-x-4">
+
+            {/* Right side: filters + button */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger className="w-40 border-gray-200">
+                <SelectTrigger className="w-full sm:w-40 border-gray-200">
                   <Calendar className="w-4 h-4 mr-2" />
                   <SelectValue />
                 </SelectTrigger>
@@ -131,10 +138,11 @@ export default function ReportsPage() {
                   <SelectItem value="1year">Last Year</SelectItem>
                 </SelectContent>
               </Select>
+
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button
                   onClick={() => handleDownload("comprehensive")}
-                  className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
+                  className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Export Report
@@ -143,6 +151,7 @@ export default function ReportsPage() {
             </div>
           </div>
         </motion.div>
+
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

@@ -139,14 +139,14 @@ export default function AlertsPage() {
     }
   }
 
- const getPriorityBadge = (priority: string): string => {
-  const colors: Record<"high" | "medium" | "low", string> = {
-    high: "bg-red-100 text-red-800 border-red-200",
-    medium: "bg-orange-100 text-orange-800 border-orange-200",
-    low: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  const getPriorityBadge = (priority: string): string => {
+    const colors: Record<"high" | "medium" | "low", string> = {
+      high: "bg-red-100 text-red-800 border-red-200",
+      medium: "bg-orange-100 text-orange-800 border-orange-200",
+      low: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    }
+    return colors[priority as keyof typeof colors] ?? "bg-gray-100 text-gray-800 border-gray-200"
   }
-  return colors[priority as keyof typeof colors] ?? "bg-gray-100 text-gray-800 border-gray-200"
-}
 
 
   const handleResolveAlert = (id: number) => {
@@ -203,7 +203,7 @@ export default function AlertsPage() {
         </motion.div>
 
         {/* Alert Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6">
           {[
             {
               title: "Critical Stock",
@@ -267,9 +267,9 @@ export default function AlertsPage() {
         >
           <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardContent className="p-6">
-              <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-                <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                  <div className="relative flex-1 max-w-md">
+              <div className="flex flex-col lg:flex-row gap-4 w-full">
+                <div className="flex flex-col sm:flex-row gap-4 w-full">
+                  <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
                       placeholder="Search alerts..."
@@ -332,11 +332,10 @@ export default function AlertsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className={`p-4 rounded-lg border-2 transition-all duration-300 hover:shadow-md ${getAlertColor(alert.type, alert.priority)} ${
-                      alert.priority === "high" && alert.status === "active" ? "animate-pulse-glow" : ""
-                    }`}
+                    className={`p-4 rounded-lg border-2 transition-all duration-300 hover:shadow-md ${getAlertColor(alert.type, alert.priority)} ${alert.priority === "high" && alert.status === "active" ? "animate-pulse-glow" : ""
+                      }`}
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                       <div className="flex items-start space-x-3 flex-1">
                         <div className="flex-shrink-0 mt-1">{getAlertIcon(alert.type)}</div>
                         <div className="flex-1 min-w-0">
@@ -363,7 +362,7 @@ export default function AlertsPage() {
                       </div>
 
                       {alert.status === "active" && (
-                        <div className="flex items-center space-x-2 ml-4">
+                        <div className="flex items-center space-x-2">
                           <Button
                             variant="outline"
                             size="sm"
