@@ -1,0 +1,564 @@
+"use client"
+
+import type React from "react"
+
+import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import Header from "@/components/Header"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Package,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Filter,
+  Download,
+  AlertTriangle,
+  Calendar,
+} from "lucide-react"
+import { useRouter } from "next/navigation"
+
+// --- Types ---
+type Medicine = {
+  id: number
+  name: string
+  category: string
+  manufacturer: string
+  batchNumber: string
+  quantity: number
+  minStock: number
+  expiryDate: string
+  price: number
+  status: string
+}
+
+// Form uses string values for inputs
+type MedicineFormData = Omit<Medicine, "id" | "status" | "quantity" | "minStock" | "price"> & {
+  quantity: string
+  minStock: string
+  price: string
+}
+
+// --- Mock medicine data ---
+const mockMedicines: Medicine[] = [
+  {
+    id: 1,
+    name: "Amoxicillin 500mg",
+    category: "Antibiotic",
+    manufacturer: "PharmaCorp",
+    batchNumber: "AMX2024001",
+    quantity: 150,
+    minStock: 50,
+    expiryDate: "2025-08-15",
+    price: 12.5,
+    status: "In Stock",
+  },
+  {
+    id: 2,
+    name: "Paracetamol 500mg",
+    category: "Pain Relief",
+    manufacturer: "MediLab",
+    batchNumber: "PAR2024002",
+    quantity: 8,
+    minStock: 25,
+    expiryDate: "2024-12-20",
+    price: 5.75,
+    status: "Low Stock",
+  },
+  {
+    id: 3,
+    name: "Insulin Pen",
+    category: "Diabetes",
+    manufacturer: "DiabetesPlus",
+    batchNumber: "INS2024003",
+    quantity: 45,
+    minStock: 20,
+    expiryDate: "2024-09-10",
+    price: 85.0,
+    status: "Near Expiry",
+  },
+  {
+    id: 4,
+    name: "Vitamin D3 1000IU",
+    category: "Supplement",
+    manufacturer: "VitaHealth",
+    batchNumber: "VIT2024004",
+    quantity: 200,
+    minStock: 75,
+    expiryDate: "2026-03-15",
+    price: 18.25,
+    status: "In Stock",
+  },
+  {
+    id: 5,
+    name: "Aspirin 75mg",
+    category: "Cardiovascular",
+    manufacturer: "HeartCare",
+    batchNumber: "ASP2024005",
+    quantity: 3,
+    minStock: 30,
+    expiryDate: "2025-11-30",
+    price: 8.9,
+    status: "Critical",
+  },
+]
+
+export default function InventoryPage() {
+  const [medicines, setMedicines] = useState<Medicine[]>(mockMedicines)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterCategory, setFilterCategory] = useState("all")
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [editingMedicine, setEditingMedicine] = useState<Medicine | null>(null)
+  const [activeTab, setActiveTab] = useState("inventory")
+  const router = useRouter()
+
+  // Form state
+  const [formData, setFormData] = useState<MedicineFormData>({
+    name: "",
+    category: "",
+    manufacturer: "",
+    batchNumber: "",
+    quantity: "",
+    minStock: "",
+    expiryDate: "",
+    price: "",
+  })
+
+  const categories = ["Antibiotic", "Pain Relief", "Diabetes", "Supplement", "Cardiovascular", "Vaccine"]
+
+  const filteredMedicines = medicines.filter((medicine) => {
+    const matchesSearch =
+      medicine.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      medicine.manufacturer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      medicine.batchNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = filterCategory === "all" || medicine.category === filterCategory
+    return matchesSearch && matchesCategory
+  })
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "In Stock":
+        return "bg-emerald-100 text-emerald-800 border-emerald-200"
+      case "Low Stock":
+        return "bg-orange-100 text-orange-800 border-orange-200"
+      case "Near Expiry":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "Critical":
+        return "bg-red-100 text-red-800 border-red-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "Low Stock":
+      case "Critical":
+        return <AlertTriangle className="w-3 h-3" />
+      case "Near Expiry":
+        return <Calendar className="w-3 h-3" />
+      default:
+        return <Package className="w-3 h-3" />
+    }
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (editingMedicine) {
+      // Update existing medicine
+      setMedicines(
+        medicines.map((med) =>
+          med.id === editingMedicine.id
+            ? {
+                ...med,
+                ...formData,
+                quantity: Number.parseInt(formData.quantity),
+                minStock: Number.parseInt(formData.minStock),
+                price: Number.parseFloat(formData.price),
+              }
+            : med,
+        ),
+      )
+    } else {
+      // Add new medicine
+      const newMedicine = {
+        id: Date.now(),
+        ...formData,
+        quantity: Number.parseInt(formData.quantity),
+        minStock: Number.parseInt(formData.minStock),
+        price: Number.parseFloat(formData.price),
+        status: Number.parseInt(formData.quantity) <= Number.parseInt(formData.minStock) ? "Low Stock" : "In Stock",
+      }
+      setMedicines([...medicines, newMedicine])
+    }
+    resetForm()
+  }
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      category: "",
+      manufacturer: "",
+      batchNumber: "",
+      quantity: "",
+      minStock: "",
+      expiryDate: "",
+      price: "",
+    })
+    setEditingMedicine(null)
+    setIsAddModalOpen(false)
+  }
+
+  const handleEdit = (medicine: any) => {
+    setEditingMedicine(medicine)
+    setFormData({
+      name: medicine.name,
+      category: medicine.category,
+      manufacturer: medicine.manufacturer,
+      batchNumber: medicine.batchNumber,
+      quantity: medicine.quantity.toString(),
+      minStock: medicine.minStock.toString(),
+      expiryDate: medicine.expiryDate,
+      price: medicine.price.toString(),
+    })
+    setIsAddModalOpen(true)
+  }
+
+  const handleDelete = (id: number) => {
+    setMedicines(medicines.filter((med) => med.id !== id))
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+
+       {/* Navigation Header */}
+      <Header />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="mb-8"
+        >
+          <h2 className="text-3xl font-serif font-bold text-gray-800 mb-2">Medicine Inventory</h2>
+          <p className="text-gray-600">Manage your medicine stock and track inventory levels</p>
+        </motion.div>
+
+        {/* Controls Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-6"
+        >
+          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                  {/* Search Bar */}
+                  <motion.div
+                    className="relative flex-1 max-w-md"
+                    whileFocus={{ scale: 1.02 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Search medicines, manufacturers, or batch numbers..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 border-gray-200 focus:border-primary focus:ring-primary/20"
+                    />
+                  </motion.div>
+
+                  {/* Category Filter */}
+                  <Select value={filterCategory} onValueChange={setFilterCategory}>
+                    <SelectTrigger className="w-full sm:w-48 border-gray-200">
+                      <Filter className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Filter by category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="border-primary/20 text-primary hover:bg-primary/5 bg-transparent"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+
+                  <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                    <DialogTrigger asChild>
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Button className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Medicine
+                        </Button>
+                      </motion.div>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <DialogHeader>
+                          <DialogTitle className="font-serif">
+                            {editingMedicine ? "Edit Medicine" : "Add New Medicine"}
+                          </DialogTitle>
+                          <DialogDescription>
+                            {editingMedicine ? "Update medicine information" : "Enter the details for the new medicine"}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="name">Medicine Name</Label>
+                              <Input
+                                id="name"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="category">Category</Label>
+                              <Select
+                                value={formData.category}
+                                onValueChange={(value) => setFormData({ ...formData, category: value })}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {categories.map((category) => (
+                                    <SelectItem key={category} value={category}>
+                                      {category}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="manufacturer">Manufacturer</Label>
+                              <Input
+                                id="manufacturer"
+                                value={formData.manufacturer}
+                                onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="batchNumber">Batch Number</Label>
+                              <Input
+                                id="batchNumber"
+                                value={formData.batchNumber}
+                                onChange={(e) => setFormData({ ...formData, batchNumber: e.target.value })}
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="quantity">Quantity</Label>
+                              <Input
+                                id="quantity"
+                                type="number"
+                                value={formData.quantity}
+                                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="minStock">Minimum Stock</Label>
+                              <Input
+                                id="minStock"
+                                type="number"
+                                value={formData.minStock}
+                                onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="expiryDate">Expiry Date</Label>
+                              <Input
+                                id="expiryDate"
+                                type="date"
+                                value={formData.expiryDate}
+                                onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="price">Price ($)</Label>
+                              <Input
+                                id="price"
+                                type="number"
+                                step="0.01"
+                                value={formData.price}
+                                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3 pt-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={resetForm}
+                              className="flex-1 bg-transparent"
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="submit"
+                              className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+                            >
+                              {editingMedicine ? "Update" : "Add"} Medicine
+                            </Button>
+                          </div>
+                        </form>
+                      </motion.div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Medicine Table */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Package className="w-5 h-5 text-primary" />
+                <span>Medicine Inventory ({filteredMedicines.length} items)</span>
+              </CardTitle>
+              <CardDescription>Complete list of medicines in your inventory</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Medicine Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Manufacturer</TableHead>
+                      <TableHead>Batch Number</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Expiry Date</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <AnimatePresence>
+                      {filteredMedicines.map((medicine, index) => (
+                        <motion.tr
+                          key={medicine.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          whileHover={{ backgroundColor: "rgba(16, 185, 129, 0.05)" }}
+                          className="group cursor-pointer"
+                        >
+                          <TableCell className="font-medium">{medicine.name}</TableCell>
+                          <TableCell>{medicine.category}</TableCell>
+                          <TableCell>{medicine.manufacturer}</TableCell>
+                          <TableCell className="font-mono text-sm">{medicine.batchNumber}</TableCell>
+                          <TableCell>
+                            <span
+                              className={medicine.quantity <= medicine.minStock ? "text-red-600 font-semibold" : ""}
+                            >
+                              {medicine.quantity}
+                            </span>
+                            <span className="text-gray-400 text-sm ml-1">/ {medicine.minStock}</span>
+                          </TableCell>
+                          <TableCell>{medicine.expiryDate}</TableCell>
+                          <TableCell>${medicine.price.toFixed(2)}</TableCell>
+                          <TableCell>
+                            <Badge className={`${getStatusColor(medicine.status)} flex items-center gap-1 w-fit`}>
+                              {getStatusIcon(medicine.status)}
+                              {medicine.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(medicine)}
+                                className="hover:bg-blue-50 hover:text-blue-600"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(medicine.id)}
+                                className="hover:bg-red-50 hover:text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </motion.tr>
+                      ))}
+                    </AnimatePresence>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </main>
+    </div>
+  )
+}
