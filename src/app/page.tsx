@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -133,28 +133,31 @@ export default function LandingPage() {
 
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {!isLogin && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="space-y-2"
-                    >
-                      <Label htmlFor="name" className="text-gray-700">
-                        Full Name
-                      </Label>
-                      <Input
-                        id="name"
-                        type="text"
-                        placeholder="Enter your full name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="border-gray-200 focus:border-primary focus:ring-primary/20"
-                        required={!isLogin}
-                      />
-                    </motion.div>
-                  )}
+                  <AnimatePresence initial={false}>
+                    {!isLogin && (
+                      <motion.div
+                        key="name-field"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="space-y-2 overflow-hidden" // overflow-hidden is important for height animations
+                      >
+                        <Label htmlFor="name" className="text-gray-700">
+                          Full Name
+                        </Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          placeholder="Enter your full name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="border-gray-200 focus:border-primary focus:ring-primary/20"
+                          required={!isLogin}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -219,7 +222,7 @@ export default function LandingPage() {
                   <button
                     type="button"
                     onClick={() => setIsLogin(!isLogin)}
-                    className="text-primary hover:text-primary/80 font-medium transition-colors duration-200"
+                    className="text-primary hover:text-primary/80 font-medium transition-colors duration-200 cursor-pointer"
                   >
                     {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
                   </button>
