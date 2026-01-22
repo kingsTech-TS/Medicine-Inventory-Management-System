@@ -73,7 +73,7 @@ export default function Header() {
             <Button variant="ghost" size="sm">
               <Bell className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => router.push("/profile")}>
               <Settings className="w-4 h-4" />
             </Button>
             <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
@@ -131,7 +131,7 @@ export default function Header() {
                 <Button variant="ghost" size="sm" className="flex-1">
                   <Bell className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" className="flex-1">
+                <Button variant="ghost" size="sm" className="flex-1" onClick={() => { router.push("/profile"); setMobileOpen(false); }}>
                   <Settings className="w-4 h-4" />
                 </Button>
                 <Button

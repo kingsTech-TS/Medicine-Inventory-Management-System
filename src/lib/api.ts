@@ -44,6 +44,34 @@ export type MedicinePayload = {
   price: number;
 };
 
+export type UserProfile = {
+  username: string;
+  email: string;
+  role: string;
+  firstName: string;
+  lastName: string;
+  gender: string;
+  phoneNumber: string;
+  profilePic: string;
+  address: string;
+};
+
+export type UserProfileUpdate = {
+  firstName?: string;
+  lastName?: string;
+  gender?: string;
+  phoneNumber?: string;
+  profilePic?: string;
+  address?: string;
+};
+
+export type UserLoginUpdate = {
+  username?: string;
+  email?: string;
+  newPassword?: string;
+  currentPassword: string;
+};
+
 export const api = {
   getMedicines: () => request("/medicines"),
 
@@ -139,4 +167,20 @@ export const api = {
     }),
 
   getCurrentUser: () => request("/users/me"),
+
+  getProfile: (): Promise<UserProfile> => request("/users/me/profile"),
+
+  updateProfile: (updates: UserProfileUpdate): Promise<UserProfile> =>
+    request("/users/me/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    }),
+
+  updateLoginDetails: (updates: UserLoginUpdate) =>
+    request("/users/me/login-details", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    }),
 };
