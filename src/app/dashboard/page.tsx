@@ -1,6 +1,7 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
+import { api } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -61,20 +62,58 @@ const trendData = [
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview")
+  const [medicines, setMedicines] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const [dashboardStats, setDashboardStats] = useState({
+    totalMedicines: "0",
+    lowStock: "23", // Static
+    nearExpiry: "8", // Static
+    activeUsers: "45" // Static
+  })
+
+  useEffect(() => {
+    const fetchData = async () => {
+      // Check for token before fetching
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null
+      if (!token) {
+        router.push("/")
+        return
+      }
+
+      try {
+        const medicinesData = await api.getMedicines()
+        const statusData = await api.getMedicinesStatus()
+        
+        setMedicines(medicinesData)
+        setDashboardStats(prev => ({
+          ...prev,
+          totalMedicines: medicinesData.length.toLocaleString(),
+          lowStock: (statusData.low_stock_count || 0).toString(),
+          nearExpiry: (statusData.near_expiry_count || 0).toString()
+        }))
+      } catch (error) {
+        console.error("Failed to fetch dashboard data", error)
+        // If error is 401, the API helper already handles logout/redirect
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [router])
 
   const stats = [
     {
       title: "Total Medicines",
-      value: "1,247",
-      change: "+12%",
+      value: dashboardStats.totalMedicines,
+      change: "+12%", // Static
       changeType: "positive",
       icon: Package,
       color: "from-emerald-500 to-teal-600",
     },
     {
       title: "Low Stock Items",
-      value: "23",
+      value: dashboardStats.lowStock,
       change: "+5",
       changeType: "negative",
       icon: AlertTriangle,
@@ -82,7 +121,7 @@ export default function DashboardPage() {
     },
     {
       title: "Near Expiry",
-      value: "8",
+      value: dashboardStats.nearExpiry,
       change: "-2",
       changeType: "positive",
       icon: Calendar,
@@ -90,7 +129,7 @@ export default function DashboardPage() {
     },
     {
       title: "Active Users",
-      value: "45",
+      value: dashboardStats.activeUsers,
       change: "+3",
       changeType: "positive",
       icon: Users,
@@ -103,6 +142,13 @@ export default function DashboardPage() {
     { id: 2, type: "expiry", item: "Insulin Pen", message: "Expires in 5 days", time: "4 hours ago" },
     { id: 3, type: "low-stock", item: "Paracetamol 500mg", message: "Only 8 units remaining", time: "6 hours ago" },
   ]
+  
+  // Use real medicines for the stock chart, limiting to top 5
+  const realStockData = medicines.slice(0, 5).map(m => ({
+      name: m.name,
+      current: m.quantity,
+      minimum: m.minStock || 20
+  }))
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -175,7 +221,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={stockData}>
+                  <BarChart data={realStockData.length > 0 ? realStockData : stockData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} />

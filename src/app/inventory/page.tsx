@@ -2,8 +2,9 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { api } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,6 +33,7 @@ import {
   Calendar,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
 
 // --- Types ---
 type Medicine = {
@@ -119,13 +121,17 @@ const mockMedicines: Medicine[] = [
 ]
 
 export default function InventoryPage() {
-  const [medicines, setMedicines] = useState<Medicine[]>(mockMedicines)
+  const [medicines, setMedicines] = useState<Medicine[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [filterCategory, setFilterCategory] = useState("all")
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingMedicine, setEditingMedicine] = useState<Medicine | null>(null)
   const [activeTab, setActiveTab] = useState("inventory")
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const { toast } = useToast()
+
+  const categories = ["Antibiotic", "Pain Relief", "Diabetes", "Supplement", "Cardiovascular", "Vaccine", "Unknown"]
 
   // Form state
   const [formData, setFormData] = useState<MedicineFormData>({
@@ -139,7 +145,44 @@ export default function InventoryPage() {
     price: "",
   })
 
-  const categories = ["Antibiotic", "Pain Relief", "Diabetes", "Supplement", "Cardiovascular", "Vaccine"]
+  // Fetch data
+  const fetchMedicines = async () => {
+    try {
+      setLoading(true)
+      const data = await api.getMedicines()
+      // Map API data to local Medicine type
+      const mapped: Medicine[] = data.map((m: any) => ({
+        id: m.id,
+        name: m.name,
+        category: m.category || "Unknown",
+        manufacturer: m.manufacturer || "-",
+        batchNumber: m.batchNumber || "-",
+        quantity: m.quantity,
+        minStock: m.minStock || 10,
+        expiryDate: m.expiryDate || "-",
+        price: m.price,
+        status: m.status || (m.quantity < (m.minStock || 10) ? "Low Stock" : "In Stock")
+      }))
+      setMedicines(mapped)
+    } catch (error) {
+      toast({
+        title: "Error fetching medicines",
+        description: "Could not load inventory data",
+        variant: "destructive"
+      })
+    } finally {
+        setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null
+    if (!token) {
+      router.push("/")
+      return
+    }
+    fetchMedicines()
+  }, [router])
 
   const filteredMedicines = medicines.filter((medicine) => {
     const matchesSearch =
@@ -177,37 +220,60 @@ export default function InventoryPage() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (editingMedicine) {
-      // Update existing medicine
-      setMedicines(
-        medicines.map((med) =>
-          med.id === editingMedicine.id
-            ? {
-                ...med,
-                ...formData,
-                quantity: Number.parseInt(formData.quantity),
-                minStock: Number.parseInt(formData.minStock),
-                price: Number.parseFloat(formData.price),
-              }
-            : med,
-        ),
-      )
-    } else {
-      // Add new medicine
-      const newMedicine = {
-        id: Date.now(),
-        ...formData,
-        quantity: Number.parseInt(formData.quantity),
-        minStock: Number.parseInt(formData.minStock),
-        price: Number.parseFloat(formData.price),
-        status: Number.parseInt(formData.quantity) <= Number.parseInt(formData.minStock) ? "Low Stock" : "In Stock",
-      }
-      setMedicines([...medicines, newMedicine])
+    try {
+        if (editingMedicine) {
+            // Check for quantity changes to use specific restock/dispense endpoints
+            const newQty = Number(formData.quantity)
+            const oldQty = editingMedicine.quantity
+            const diff = newQty - oldQty
+
+            if (diff > 0) {
+                await api.restockMedicine(editingMedicine.id, diff)
+            } else if (diff < 0) {
+                await api.dispenseMedicine(editingMedicine.id, Math.abs(diff))
+            }
+
+            // Update other fields
+            await api.updateMedicine(editingMedicine.id, {
+                name: formData.name,
+                category: formData.category,
+                manufacturer: formData.manufacturer,
+                batchNumber: formData.batchNumber,
+                quantity: Number(formData.quantity),
+                minStock: Number(formData.minStock),
+                expiryDate: formData.expiryDate,
+                price: Number(formData.price)
+            })
+            
+            toast({ title: "Updated", description: "Medicine updated successfully", className: "bg-emerald-500 text-white" })
+        } else {
+            // Add mode
+            await api.addMedicine({
+                name: formData.name,
+                category: formData.category,
+                manufacturer: formData.manufacturer,
+                batchNumber: formData.batchNumber,
+                quantity: Number(formData.quantity),
+                minStock: Number(formData.minStock),
+                expiryDate: formData.expiryDate,
+                price: Number(formData.price)
+            })
+            toast({ title: "Added", description: "Medicine added successfully", className: "bg-emerald-500 text-white" })
+        }
+        
+        await fetchMedicines()
+        resetForm()
+
+    } catch (error) {
+        toast({
+            title: "Operation Failed",
+            description: "Could not save changes to API",
+            variant: "destructive"
+        })
     }
-    resetForm()
   }
 
   const resetForm = () => {
@@ -240,8 +306,16 @@ export default function InventoryPage() {
     setIsAddModalOpen(true)
   }
 
-  const handleDelete = (id: number) => {
-    setMedicines(medicines.filter((med) => med.id !== id))
+  const handleDelete = async (id: number) => {
+    if (confirm("Are you sure you want to delete this medicine?")) {
+        try {
+            await api.deleteMedicine(id)
+            toast({ title: "Deleted", description: "Medicine removed from inventory", className: "bg-emerald-500 text-white" })
+            await fetchMedicines()
+        } catch (error) {
+            toast({ title: "Error", description: "Could not delete medicine", variant: "destructive" })
+        }
+    }
   }
 
   return (
@@ -281,7 +355,7 @@ export default function InventoryPage() {
                   >
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
-                      placeholder="Search medicines, manufacturers, or batch numbers..."
+                      placeholder="Search medicines..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10 border-gray-200 focus:border-primary focus:ring-primary/20"
@@ -309,6 +383,7 @@ export default function InventoryPage() {
                   <Button
                     variant="outline"
                     className="border-primary/20 text-primary hover:bg-primary/5 bg-transparent"
+                    onClick={() => api.exportMedicines("csv")}
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Export
@@ -499,7 +574,11 @@ export default function InventoryPage() {
                   </TableHeader>
                   <TableBody>
                     <AnimatePresence>
-                      {filteredMedicines.map((medicine, index) => (
+                      {loading ? (
+                         <TableRow>
+                             <TableCell colSpan={9} className="text-center py-10">Loading inventory...</TableCell>
+                         </TableRow>
+                      ) : filteredMedicines.map((medicine, index) => (
                         <motion.tr
                           key={medicine.id}
                           initial={{ opacity: 0, y: 20 }}

@@ -10,6 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Activity, Shield, Users, TrendingUp } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { api } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
+
 
 export default function LandingPage() {
   const [isLogin, setIsLogin] = useState(true)
@@ -17,13 +20,58 @@ export default function LandingPage() {
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
   const router = useRouter()
+  const { toast } = useToast()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle authentication logic here
-    console.log("Form submitted:", { email, password, name })
-    // For demo purposes, redirect to dashboard
-    router.push("/dashboard")
+    
+    try {
+      if (isLogin) {
+        // Handle Login
+        const formData = new FormData()
+        formData.append("username", email)
+        formData.append("password", password)
+        
+        const response = await api.login(formData)
+        localStorage.setItem("accessToken", response.access_token)
+        
+        toast({
+          title: "Login Successful",
+          description: "Redirecting to dashboard...",
+          className: "bg-emerald-500 text-white border-none",
+        })
+        
+        setTimeout(() => router.push("/dashboard"), 1000)
+      } else {
+        // Handle Registration
+        // Note: We are assuming the API accepts email and password for user creation.
+        // If 'name' is required by the backend, it should be included.
+        // Based on typical schemas, we'll send what we have.
+        try {
+            await api.createUser({ email, password, full_name: name })
+            toast({
+              title: "Account Created",
+              description: "Please sign in with your new credentials.",
+              className: "bg-emerald-500 text-white border-none",
+            })
+            setIsLogin(true)
+        } catch (error) {
+            // Fallback for missing features or schema mismatch
+             toast({
+              title: "Registration Failed",
+              description: error instanceof Error ? error.message : "Could not create account",
+              variant: "destructive",
+            })
+        }
+      }
+    } catch (error) {
+      console.error("Auth error:", error)
+      toast({
+        title: isLogin ? "Login Failed" : "Registration Failed",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
