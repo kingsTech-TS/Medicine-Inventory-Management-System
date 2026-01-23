@@ -48,7 +48,16 @@ export default function LandingPage() {
         // If 'name' is required by the backend, it should be included.
         // Based on typical schemas, we'll send what we have.
         try {
-            await api.createUser({ email, password, full_name: name })
+            const [firstName, ...lastNameParts] = name.split(" ")
+            const lastName = lastNameParts.join(" ")
+            await api.createUser({ 
+              username: email, 
+              email, 
+              password, 
+              role: "staff",
+              firstName: firstName || name,
+              lastName: lastName || ""
+            })
             toast({
               title: "Account Created",
               description: "Please sign in with your new credentials.",
