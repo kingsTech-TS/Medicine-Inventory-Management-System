@@ -200,4 +200,34 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
     }),
+
+  uploadProfilePic: async (file: File) => {
+    const isBrowser = typeof window !== "undefined";
+    const token = isBrowser ? localStorage.getItem("accessToken") : null;
+
+    const formData = new FormData();
+    formData.append("profilePic", file);
+
+    const response = await fetch(`${BASE_URL}/users/me/profile-pic`, {
+      method: "POST",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+
+    if (response.status === 401 && isBrowser) {
+      localStorage.removeItem("accessToken");
+      if (window.location.pathname !== "/") {
+        window.location.href = "/";
+      }
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Upload failed with status ${response.status}`);
+    }
+
+    return response.json();
+  },
 };
