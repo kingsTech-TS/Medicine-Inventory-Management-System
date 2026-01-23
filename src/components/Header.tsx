@@ -14,6 +14,7 @@ import {
   LogOut,
   Menu,
   X,
+  Users,
 } from "lucide-react"
 
 export default function Header() {
@@ -24,6 +25,7 @@ export default function Header() {
   const navItems = [
     { id: "overview", label: "Overview", icon: Home, path: "/dashboard" },
     { id: "inventory", label: "Inventory", icon: Package, path: "/inventory" },
+    { id: "users", label: "Users", icon: Users, path: "/admin/users" },
     { id: "reports", label: "Reports", icon: BarChart3, path: "/reports" },
     { id: "alerts", label: "Alerts", icon: Bell, path: "/alerts" },
   ]

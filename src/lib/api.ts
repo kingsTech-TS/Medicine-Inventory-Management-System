@@ -56,6 +56,19 @@ export type UserProfile = {
   address: string;
 };
 
+export type UserCreate = {
+  username: string;
+  email: string;
+  password?: string;
+  role: string;
+  firstName?: string;
+  lastName?: string;
+  gender?: string;
+  phoneNumber?: string;
+  profilePic?: string;
+  address?: string;
+};
+
 export type UserProfileUpdate = {
   firstName?: string;
   lastName?: string;
@@ -147,14 +160,18 @@ export const api = {
     return response.json();
   },
 
-  createUser: (userData: any) =>
+  getUsers: (): Promise<UserProfile[]> => request("/users"),
+
+  getUserDetail: (username: string): Promise<UserProfile> => request(`/users/${username}`),
+
+  createUser: (userData: UserCreate) =>
     request("/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
     }),
 
-  updateUser: (username: string, updates: any) =>
+  updateUser: (username: string, updates: Partial<UserCreate>) =>
     request(`/users/${username}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
