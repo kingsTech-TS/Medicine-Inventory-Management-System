@@ -37,7 +37,6 @@ import {
   AlertTriangle,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import Header from "@/components/Header"
 
 // Mock data for various reports
 const monthlyUsageData = [
@@ -100,12 +99,8 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-
-      {/* Navigation Header */}
-      <Header />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-transparent">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-20 md:pt-8">
         {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -23,7 +23,6 @@ import {
 } from "lucide-react"
 import { api, UserProfile, UserProfileUpdate, UserLoginUpdate } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
-import Header from "@/components/Header"
 import {
   Select,
   SelectContent,
@@ -160,11 +159,8 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     )
   }
@@ -176,9 +172,7 @@ export default function ProfilePage() {
       <div className="absolute top-20 right-[-10%] w-96 h-96 bg-purple-200 rounded-full blur-3xl opacity-20 animate-pulse" />
       <div className="absolute bottom-0 left-[-5%] w-80 h-80 bg-emerald-100 rounded-full blur-3xl opacity-30" />
 
-      <Header />
-
-      <main className="max-w-4xl mx-auto px-4 py-12 relative z-10">
+      <main className="max-w-4xl mx-auto px-4 py-12 relative z-10 pt-20 md:pt-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -311,7 +305,7 @@ export default function ProfilePage() {
                         <div className="flex justify-end pt-4">
                           <Button 
                             disabled={saving}
-                            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 rounded-xl h-11 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                            className="bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 rounded-xl h-11 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
                           >
                             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                             Save Changes
