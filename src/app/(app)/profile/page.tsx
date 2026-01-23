@@ -172,7 +172,7 @@ export default function ProfilePage() {
       <div className="absolute top-20 right-[-10%] w-96 h-96 bg-purple-200 rounded-full blur-3xl opacity-20 animate-pulse" />
       <div className="absolute bottom-0 left-[-5%] w-80 h-80 bg-emerald-100 rounded-full blur-3xl opacity-30" />
 
-      <main className="max-w-4xl mx-auto px-4 py-12 relative z-10 pt-20 md:pt-12">
+      <main className="max-w-4xl mx-auto px-4 py-12 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
