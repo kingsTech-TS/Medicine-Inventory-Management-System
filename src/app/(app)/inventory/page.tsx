@@ -144,6 +144,42 @@ export default function InventoryPage() {
     price: "",
   })
 
+  const [isDispenseModalOpen, setIsDispenseModalOpen] = useState(false)
+  const [dispenseItem, setDispenseItem] = useState<Medicine | null>(null)
+  const [dispenseAmount, setDispenseAmount] = useState("")
+
+  const handleDispenseClick = (medicine: Medicine) => {
+    setDispenseItem(medicine)
+    setDispenseAmount("")
+    setIsDispenseModalOpen(true)
+  }
+
+  const handleDispenseSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!dispenseItem || !dispenseAmount) return
+
+    try {
+      setLoading(true)
+      await api.dispenseMedicine(dispenseItem.id, parseInt(dispenseAmount))
+      toast({
+        title: "Dispensed Successfully",
+        description: `Dispensed ${dispenseAmount} units of ${dispenseItem.name}`,
+        className: "bg-emerald-500 text-white border-none",
+      })
+      setIsDispenseModalOpen(false)
+      fetchMedicines()
+    } catch (error) {
+      toast({
+        title: "Dispense Failed",
+        description: error instanceof Error ? error.message : "Could not dispense medicine",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+
   // Fetch data
   const fetchMedicines = async () => {
     try {
@@ -608,6 +644,15 @@ export default function InventoryPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                onClick={() => handleDispenseClick(medicine)}
+                                className="hover:bg-orange-50 hover:text-orange-600"
+                                title="Dispense"
+                              >
+                                <Package className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleEdit(medicine)}
                                 className="hover:bg-blue-50 hover:text-blue-600"
                               >
@@ -632,6 +677,39 @@ export default function InventoryPage() {
             </CardContent>
           </Card>
         </motion.div>
+        <Dialog open={isDispenseModalOpen} onOpenChange={setIsDispenseModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Dispense Medicine</DialogTitle>
+              <DialogDescription>
+                Dispensing {dispenseItem?.name}. Current Stock: {dispenseItem?.quantity}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleDispenseSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="dispense-amount">Amount to Dispense</Label>
+                <Input
+                  id="dispense-amount"
+                  type="number"
+                  min="1"
+                  max={dispenseItem?.quantity}
+                  value={dispenseAmount}
+                  onChange={(e) => setDispenseAmount(e.target.value)}
+                  placeholder="Enter quantity"
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button type="button" variant="outline" onClick={() => setIsDispenseModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white">
+                  Dispense
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   )

@@ -73,8 +73,9 @@ export default function UserForm({ initialData, onSubmit, onCancel, loading }: U
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="staff">Staff</SelectItem>
               <SelectItem value="pharmacist">Pharmacist</SelectItem>
+              <SelectItem value="supplier">Supplier</SelectItem>
+              <SelectItem value="staff">Staff</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
+import { api } from "@/lib/api"
 import {
   Activity,
   Home,
@@ -25,14 +26,36 @@ export default function Sidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const navItems = [
-    { id: "overview", label: "Overview", icon: Home, path: "/dashboard" },
-    { id: "inventory", label: "Inventory", icon: Package, path: "/inventory" },
-    { id: "users", label: "Users", icon: Users, path: "/admin/users" },
-    { id: "reports", label: "Reports", icon: BarChart3, path: "/reports" },
-    { id: "alerts", label: "Alerts", icon: Bell, path: "/alerts" },
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const profile = await api.getProfile()
+        setUserRole(profile.role)
+      } catch (e) {
+        console.error("Failed to fetch user profile", e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchUser()
+  }, [])
+
+  const allNavItems = [
+    { id: "overview", label: "Overview", icon: Home, path: "/dashboard", roles: ["admin", "pharmacist", "supplier"] },
+    { id: "inventory", label: "Inventory", icon: Package, path: "/inventory", roles: ["admin", "pharmacist"] },
+    { id: "users", label: "Users", icon: Users, path: "/admin/users", roles: ["admin"] },
+    { id: "reports", label: "Reports", icon: BarChart3, path: "/reports", roles: ["admin", "pharmacist", "supplier"] },
+    { id: "alerts", label: "Alerts", icon: Bell, path: "/alerts", roles: ["admin", "pharmacist", "supplier"] },
+    { id: "activities", label: "Activities", icon: Activity, path: "/activities", roles: ["admin"] },
+    { id: "suppliers", label: "Suppliers", icon: Users, path: "/suppliers", roles: ["pharmacist"] },
   ]
+
+  const navItems = allNavItems.filter(item => 
+    userRole && item.roles.includes(userRole.toLowerCase())
+  )
 
   const activeTab =
     navItems.find((item) => pathname.startsWith(item.path))?.id ?? "overview"
@@ -41,7 +64,7 @@ export default function Sidebar() {
     <div className="flex flex-col h-full py-6 px-4">
       {/* Logo */}
       <div className={cn("flex items-center mb-10 px-2", collapsed ? "justify-center" : "space-x-3")}>
-        <div className="p-2 bg-linear-to-r from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/20 shrink-0">
+        <div className="p-2 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/20 shrink-0">
           <Activity className="w-6 h-6 text-white" />
         </div>
         {!collapsed && (
@@ -57,7 +80,14 @@ export default function Sidebar() {
 
       {/* Navigation Items */}
       <nav className="flex-1 space-y-2">
-        {navItems.map((item) => (
+        {loading ? (
+             <div className="space-y-2">
+               {[1, 2, 3, 4].map((i) => (
+                 <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />
+               ))}
+             </div>
+        ) : (
+        navItems.map((item) => (
           <button
             key={item.id}
             onClick={() => {
@@ -82,7 +112,7 @@ export default function Sidebar() {
               </div>
             )}
           </button>
-        ))}
+        )))}
       </nav>
 
       {/* Bottom Actions */}
