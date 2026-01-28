@@ -42,6 +42,22 @@ export type MedicinePayload = {
   minStock: number;
   expiryDate: string;
   price: number;
+  supplier?: string;
+};
+
+export type Alert = {
+  medicineId: number;
+  medicineName: string;
+  currentStock: number;
+  minStock: number;
+  status: string;
+  category: string;
+  manufacturer: string;
+  batchNumber: string;
+  expiryDate: string;
+  price: number;
+  timestamp: string;
+  daysRemaining: number | null;
 };
 
 export type UserProfile = {
@@ -146,6 +162,8 @@ export const api = {
 
   getMedicinesStatus: () => request("/medicines/status"),
 
+  getAlerts: (): Promise<Alert[]> => request("/alerts"),
+
   searchMedicines: (query: string) => request(`/medicines/search?query=${query}`),
 
   login: async (formData: FormData) => {
@@ -230,4 +248,13 @@ export const api = {
 
     return response.json();
   },
+
+  getActivities: (limit: number = 100): Promise<Activity[]> => request(`/activities?limit=${limit}`),
+};
+
+export type Activity = {
+  timestamp: string;
+  user: string;
+  action: string;
+  details: string;
 };
