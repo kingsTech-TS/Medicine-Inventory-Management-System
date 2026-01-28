@@ -250,6 +250,9 @@ export const api = {
   },
 
   getActivities: (limit: number = 100): Promise<Activity[]> => request(`/activities?limit=${limit}`),
+  getExpiringMedicines: (): Promise<any[]> => request("/medicines/expiring"),
+  getSuppliers: (): Promise<UserProfile[]> => request("/suppliers"),
+  getSupplierAlerts: (): Promise<Alert[]> => request("/supplier-alerts"),
 };
 
 export type Activity = {

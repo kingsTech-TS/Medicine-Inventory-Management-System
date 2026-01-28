@@ -38,13 +38,18 @@ import {
   Clock,
   Zap,
   RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { api, type Alert } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
+type EnhancedAlert = Alert & {
+  alertType: "stock" | "expiry";
+};
+
 export default function AlertsPage() {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [alerts, setAlerts] = useState<EnhancedAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -59,13 +64,50 @@ export default function AlertsPage() {
   const fetchAlerts = async () => {
     try {
       setLoading(true);
-      const data = await api.getAlerts();
-      setAlerts(data);
+
+      // Fetch from both endpoints
+      const [stockAlerts, expiringMedicines] = await Promise.all([
+        api.getAlerts(),
+        api.getExpiringMedicines(),
+      ]);
+
+      // Process stock alerts
+      const processedStock: EnhancedAlert[] = stockAlerts.map((a) => ({
+        ...a,
+        alertType: "stock",
+      }));
+
+      // Process expiring medicines (map Medicine type to Alert type structure roughly)
+      const processedExpiry: EnhancedAlert[] = (expiringMedicines || []).map(
+        (m: any) => ({
+          medicineId: m.id,
+          medicineName: m.name,
+          currentStock: m.quantity,
+          minStock: m.minStock,
+          status: m.status,
+          category: m.category,
+          manufacturer: m.manufacturer,
+          batchNumber: m.batchNumber,
+          expiryDate: m.expiryDate,
+          price: m.price,
+          timestamp: new Date().toISOString(), // Fallback
+          daysRemaining: m.daysRemaining || null,
+          alertType: "expiry" as const,
+        }),
+      );
+
+      // Merge and de-duplicate by ID, but prioritize stock alerts if both exist
+      const alertMap = new Map<number, EnhancedAlert>();
+
+      processedExpiry.forEach((a) => alertMap.set(a.medicineId, a));
+      processedStock.forEach((a) => alertMap.set(a.medicineId, a));
+
+      setAlerts(Array.from(alertMap.values()));
     } catch (error) {
       console.error("Failed to fetch alerts", error);
       toast({
         title: "Error",
-        description: "Failed to fetch stock alerts",
+        description: "Failed to fetch stock and expiry alerts",
         variant: "destructive",
       });
     } finally {
@@ -89,30 +131,43 @@ export default function AlertsPage() {
     const matchesSearch = alert.medicineName
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
-    const type =
-      alert.currentStock === 0
-        ? "critical"
-        : alert.currentStock <= alert.minStock
-          ? "low-stock"
-          : "normal";
-    const matchesType = filterType === "all" || type === filterType;
-    return matchesSearch && matchesType;
+
+    let typeFilterMatch = true;
+    if (filterType === "critical") typeFilterMatch = alert.currentStock === 0;
+    else if (filterType === "low-stock")
+      typeFilterMatch =
+        alert.currentStock > 0 && alert.currentStock <= alert.minStock;
+    else if (filterType === "expiring")
+      typeFilterMatch =
+        alert.alertType === "expiry" || alert.status === "Near Expiry";
+
+    return matchesSearch && typeFilterMatch;
   });
 
-  const getAlertIcon = (current: number, min: number) => {
-    if (current === 0) return <Zap className="w-4 h-4" />;
-    if (current <= min) return <AlertTriangle className="w-4 h-4" />;
+  const getAlertIcon = (alert: EnhancedAlert) => {
+    if (alert.currentStock === 0) return <Zap className="w-4 h-4" />;
+    if (alert.alertType === "expiry" || alert.status === "Near Expiry")
+      return <AlertCircle className="w-4 h-4" />;
+    if (alert.currentStock <= alert.minStock)
+      return <AlertTriangle className="w-4 h-4" />;
     return <Bell className="w-4 h-4" />;
   };
 
-  const getAlertColor = (current: number, min: number) => {
-    if (current === 0) return "bg-red-50 border-red-200 text-red-800";
-    if (current <= min) return "bg-orange-50 border-orange-200 text-orange-800";
+  const getAlertColor = (alert: EnhancedAlert) => {
+    if (alert.currentStock === 0)
+      return "bg-red-50 border-red-200 text-red-800";
+    if (alert.status === "Near Expiry" || alert.alertType === "expiry")
+      return "bg-yellow-50 border-yellow-200 text-yellow-800";
+    if (alert.currentStock <= alert.minStock)
+      return "bg-orange-50 border-orange-200 text-orange-800";
     return "bg-gray-50 border-gray-200 text-gray-800";
   };
 
-  const getPriorityBadge = (current: number): string => {
-    if (current === 0) return "bg-red-100 text-red-800 border-red-200";
+  const getPriorityBadge = (alert: EnhancedAlert): string => {
+    if (alert.currentStock === 0)
+      return "bg-red-100 text-red-800 border-red-200";
+    if (alert.status === "Near Expiry" || alert.alertType === "expiry")
+      return "bg-yellow-100 text-yellow-800 border-yellow-200";
     return "bg-orange-100 text-orange-800 border-orange-200";
   };
 
@@ -159,6 +214,7 @@ export default function AlertsPage() {
       (now.getTime() - date.getTime()) / (1000 * 60 * 60),
     );
 
+    if (isNaN(diffInHours)) return "Recently";
     if (diffInHours < 1) return "Just now";
     if (diffInHours < 24) return `${diffInHours} hours ago`;
     return `${Math.floor(diffInHours / 24)} days ago`;
@@ -167,6 +223,9 @@ export default function AlertsPage() {
   const criticalCount = alerts.filter((a) => a.currentStock === 0).length;
   const lowStockCount = alerts.filter(
     (a) => a.currentStock > 0 && a.currentStock <= a.minStock,
+  ).length;
+  const expiringCount = alerts.filter(
+    (a) => a.alertType === "expiry" || a.status === "Near Expiry",
   ).length;
 
   return (
@@ -182,10 +241,10 @@ export default function AlertsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-3xl font-serif font-bold text-gray-800 mb-2">
-                Stock Alerts
+                Stock & Expiry Alerts
               </h2>
               <p className="text-gray-600">
-                Monitor critical stock levels and expiry dates
+                Monitor critical stock levels and upcoming medicine expiries
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -212,17 +271,22 @@ export default function AlertsPage() {
                 </div>
                 <div className="text-sm text-gray-500">Low Stock</div>
               </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {expiringCount}
+                </div>
+                <div className="text-sm text-gray-500">Expiring</div>
+              </div>
             </div>
           </div>
         </motion.div>
 
         {/* Alert Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="group animate-pulse-glow"
           >
             <Card className="border-0 shadow-lg bg-red-50">
               <CardContent className="p-6">
@@ -266,6 +330,30 @@ export default function AlertsPage() {
               </CardContent>
             </Card>
           </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <Card className="border-0 shadow-lg bg-yellow-50">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">
+                      Expiring Soon
+                    </p>
+                    <p className="text-3xl font-bold text-yellow-800">
+                      {expiringCount}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-gradient-to-r from-yellow-500 to-yellow-600">
+                    <Calendar className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
 
         {/* Filters */}
@@ -288,9 +376,10 @@ export default function AlertsPage() {
                     <SelectValue placeholder="Filter by type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Levels</SelectItem>
+                    <SelectItem value="all">All Alerts</SelectItem>
                     <SelectItem value="critical">Critical (0)</SelectItem>
                     <SelectItem value="low-stock">Low Stock</SelectItem>
+                    <SelectItem value="expiring">Expiring Soon</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -313,29 +402,30 @@ export default function AlertsPage() {
               ) : (
                 filteredAlerts.map((alert, index) => (
                   <motion.div
-                    key={alert.medicineId}
+                    key={`${alert.alertType}-${alert.medicineId}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className={`p-4 rounded-lg border-2 transition-all duration-300 hover:shadow-md ${getAlertColor(alert.currentStock, alert.minStock)}`}
+                    className={`p-4 rounded-lg border-2 transition-all duration-300 hover:shadow-md ${getAlertColor(alert)}`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                       <div className="flex items-start space-x-3 flex-1">
                         <div className="flex-shrink-0 mt-1">
-                          {getAlertIcon(alert.currentStock, alert.minStock)}
+                          {getAlertIcon(alert)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-2">
                             <h3 className="font-semibold text-gray-800">
                               {alert.medicineName}
                             </h3>
-                            <Badge
-                              className={getPriorityBadge(alert.currentStock)}
-                            >
+                            <Badge className={getPriorityBadge(alert)}>
                               {alert.currentStock === 0
                                 ? "CRITICAL"
-                                : "LOW STOCK"}
+                                : alert.alertType === "expiry" ||
+                                    alert.status === "Near Expiry"
+                                  ? "EXPIRING"
+                                  : "LOW STOCK"}
                             </Badge>
                             <Badge variant="outline" className="text-xs">
                               {alert.category}
@@ -344,7 +434,15 @@ export default function AlertsPage() {
                           <p className="text-sm text-gray-700 mb-2">
                             {alert.currentStock === 0
                               ? "Item is completely out of stock!"
-                              : `Stock level: ${alert.currentStock} units remaining (Minimum: ${alert.minStock})`}
+                              : alert.alertType === "expiry" ||
+                                  alert.status === "Near Expiry"
+                                ? `Item is expiring on ${alert.expiryDate}. Please prioritize dispensing.`
+                                : `Stock level: ${alert.currentStock} units remaining (Minimum: ${alert.minStock})`}
+                            {alert.daysRemaining !== null && (
+                              <span className="ml-2 font-medium text-red-600">
+                                ({alert.daysRemaining} days remaining)
+                              </span>
+                            )}
                           </p>
                           <div className="flex items-center space-x-4 text-xs text-gray-500">
                             <div className="flex items-center space-x-1">
@@ -358,14 +456,16 @@ export default function AlertsPage() {
                           </div>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        className="bg-orange-500 hover:bg-orange-600 text-white"
-                        onClick={() => handleRestockClick(alert)}
-                      >
-                        <RefreshCw className="w-3 h-3 mr-1" />
-                        Restock
-                      </Button>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          size="sm"
+                          className="bg-orange-500 hover:bg-orange-600 text-white"
+                          onClick={() => handleRestockClick(alert)}
+                        >
+                          <RefreshCw className="w-3 h-3 mr-1" />
+                          Restock
+                        </Button>
+                      </div>
                     </div>
                   </motion.div>
                 ))
@@ -379,7 +479,8 @@ export default function AlertsPage() {
                   No alerts found
                 </h3>
                 <p className="text-gray-400">
-                  Inventory levels are currently within safe limits.
+                  Inventory levels and expiries are currently within safe
+                  limits.
                 </p>
               </div>
             )}

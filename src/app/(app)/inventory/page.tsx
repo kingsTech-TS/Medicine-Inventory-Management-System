@@ -4,7 +4,7 @@ import type React from "react";
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { api, type Alert } from "@/lib/api";
+import { api, type Alert, type UserProfile } from "@/lib/api";
 import {
   Card,
   CardContent,
@@ -65,6 +65,7 @@ type Medicine = {
   expiryDate: string;
   price: number;
   status: string;
+  supplier: string;
 };
 
 // Form uses string values for inputs
@@ -164,6 +165,7 @@ export default function InventoryPage() {
   ];
 
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [suppliers, setSuppliers] = useState<UserProfile[]>([]);
 
   // Form state
   const [formData, setFormData] = useState<MedicineFormData>({
@@ -235,6 +237,7 @@ export default function InventoryPage() {
         status:
           m.status ||
           (m.quantity < (m.minStock || 10) ? "Low Stock" : "In Stock"),
+        supplier: m.supplier || "-",
       }));
       setMedicines(mapped);
     } catch (error) {
@@ -270,6 +273,8 @@ export default function InventoryPage() {
       .catch(() => {
         console.error("Failed to fetch profile");
       });
+
+    api.getSuppliers().then(setSuppliers).catch(console.error);
 
     fetchMedicines();
   }, [router]);
@@ -622,16 +627,30 @@ export default function InventoryPage() {
                                 <Label htmlFor="supplier">
                                   Supplier (Optional)
                                 </Label>
-                                <Input
-                                  id="supplier"
+                                <Select
                                   value={formData.supplier}
-                                  onChange={(e) =>
+                                  onValueChange={(value) =>
                                     setFormData({
                                       ...formData,
-                                      supplier: e.target.value,
+                                      supplier: value === "none" ? "" : value,
                                     })
                                   }
-                                />
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select supplier" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    {suppliers.map((s) => (
+                                      <SelectItem
+                                        key={s.username}
+                                        value={s.username}
+                                      >
+                                        {s.username}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </div>
                             </div>
 
@@ -759,6 +778,7 @@ export default function InventoryPage() {
                       <TableHead>Quantity</TableHead>
                       <TableHead>Expiry Date</TableHead>
                       <TableHead>Price</TableHead>
+                      <TableHead>Supplier</TableHead>
                       <TableHead>Status</TableHead>
                       {userRole !== "admin" && <TableHead>Actions</TableHead>}
                     </TableRow>
@@ -808,6 +828,7 @@ export default function InventoryPage() {
                             </TableCell>
                             <TableCell>{medicine.expiryDate}</TableCell>
                             <TableCell>${medicine.price.toFixed(2)}</TableCell>
+                            <TableCell>{medicine.supplier}</TableCell>
                             <TableCell>
                               <Badge
                                 className={`${getStatusColor(medicine.status)} flex items-center gap-1 w-fit`}
