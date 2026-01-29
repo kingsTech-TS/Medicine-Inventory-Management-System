@@ -101,6 +101,19 @@ export type UserLoginUpdate = {
   currentPassword: string;
 };
 
+export type Message = {
+  id?: string;
+  sender: string;
+  receiver: string;
+  content: string;
+  timestamp: string;
+};
+
+export type SendMessageRequest = {
+  receiver: string;
+  content: string;
+};
+
 export const api = {
   getMedicines: () => request("/medicines"),
 
@@ -253,6 +266,19 @@ export const api = {
   getExpiringMedicines: (): Promise<any[]> => request("/medicines/expiring"),
   getSuppliers: (): Promise<UserProfile[]> => request("/suppliers"),
   getSupplierAlerts: (): Promise<Alert[]> => request("/supplier-alerts"),
+
+  sendMessage: (data: SendMessageRequest) =>
+    request("/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+
+  getChatHistory: (withUser: string): Promise<Message[]> =>
+    request(`/messages/${withUser}`),
+
+  inspectChatHistory: (user1: string, user2: string): Promise<Message[]> =>
+    request(`/admin/messages/inspect/${user1}/${user2}`),
 };
 
 export type Activity = {

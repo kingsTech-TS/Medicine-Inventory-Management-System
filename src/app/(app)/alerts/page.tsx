@@ -188,8 +188,8 @@ export default function AlertsPage() {
         parseInt(restockAmount),
       );
       toast({
-        title: "Restocked Successfully",
-        description: `Added ${restockAmount} units to ${restockItem.medicineName}`,
+        title: "Restock Requested",
+        description: `Added ${restockAmount} units. Supplier notified via automated log.`,
         className: "bg-emerald-500 text-white border-none",
       });
       setIsRestockModalOpen(false);

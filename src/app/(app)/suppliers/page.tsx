@@ -27,9 +27,12 @@ import {
   MapPin,
   AlertCircle,
   RefreshCw,
+  MessageSquare,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function SuppliersPage() {
+  const router = useRouter();
   const [suppliers, setSuppliers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -103,6 +106,7 @@ export default function SuppliersPage() {
                       <TableHead>Contact Info</TableHead>
                       <TableHead>Address</TableHead>
                       <TableHead>Stock Alerts</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -168,6 +172,17 @@ export default function SuppliersPage() {
                                   All good
                                 </Badge>
                               )}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => router.push(`/messages`)}
+                                className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 gap-2 font-medium"
+                              >
+                                <MessageSquare className="w-4 h-4" />
+                                Message
+                              </Button>
                             </TableCell>
                           </TableRow>
                         );

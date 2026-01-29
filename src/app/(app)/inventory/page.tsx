@@ -80,68 +80,68 @@ type MedicineFormData = Omit<
 };
 
 // --- Mock medicine data ---
-const mockMedicines: Medicine[] = [
-  {
-    id: 1,
-    name: "Amoxicillin 500mg",
-    category: "Antibiotic",
-    manufacturer: "PharmaCorp",
-    batchNumber: "AMX2024001",
-    quantity: 150,
-    minStock: 50,
-    expiryDate: "2025-08-15",
-    price: 12.5,
-    status: "In Stock",
-  },
-  {
-    id: 2,
-    name: "Paracetamol 500mg",
-    category: "Pain Relief",
-    manufacturer: "MediLab",
-    batchNumber: "PAR2024002",
-    quantity: 8,
-    minStock: 25,
-    expiryDate: "2024-12-20",
-    price: 5.75,
-    status: "Low Stock",
-  },
-  {
-    id: 3,
-    name: "Insulin Pen",
-    category: "Diabetes",
-    manufacturer: "DiabetesPlus",
-    batchNumber: "INS2024003",
-    quantity: 45,
-    minStock: 20,
-    expiryDate: "2024-09-10",
-    price: 85.0,
-    status: "Near Expiry",
-  },
-  {
-    id: 4,
-    name: "Vitamin D3 1000IU",
-    category: "Supplement",
-    manufacturer: "VitaHealth",
-    batchNumber: "VIT2024004",
-    quantity: 200,
-    minStock: 75,
-    expiryDate: "2026-03-15",
-    price: 18.25,
-    status: "In Stock",
-  },
-  {
-    id: 5,
-    name: "Aspirin 75mg",
-    category: "Cardiovascular",
-    manufacturer: "HeartCare",
-    batchNumber: "ASP2024005",
-    quantity: 3,
-    minStock: 30,
-    expiryDate: "2025-11-30",
-    price: 8.9,
-    status: "Critical",
-  },
-];
+// const mockMedicines: Medicine[] = [
+//   {
+//     id: 1,
+//     name: "Amoxicillin 500mg",
+//     category: "Antibiotic",
+//     manufacturer: "PharmaCorp",
+//     batchNumber: "AMX2024001",
+//     quantity: 150,
+//     minStock: 50,
+//     expiryDate: "2025-08-15",
+//     price: 12.5,
+//     status: "In Stock",
+//   },
+//   {
+//     id: 2,
+//     name: "Paracetamol 500mg",
+//     category: "Pain Relief",
+//     manufacturer: "MediLab",
+//     batchNumber: "PAR2024002",
+//     quantity: 8,
+//     minStock: 25,
+//     expiryDate: "2024-12-20",
+//     price: 5.75,
+//     status: "Low Stock",
+//   },
+//   {
+//     id: 3,
+//     name: "Insulin Pen",
+//     category: "Diabetes",
+//     manufacturer: "DiabetesPlus",
+//     batchNumber: "INS2024003",
+//     quantity: 45,
+//     minStock: 20,
+//     expiryDate: "2024-09-10",
+//     price: 85.0,
+//     status: "Near Expiry",
+//   },
+//   {
+//     id: 4,
+//     name: "Vitamin D3 1000IU",
+//     category: "Supplement",
+//     manufacturer: "VitaHealth",
+//     batchNumber: "VIT2024004",
+//     quantity: 200,
+//     minStock: 75,
+//     expiryDate: "2026-03-15",
+//     price: 18.25,
+//     status: "In Stock",
+//   },
+//   {
+//     id: 5,
+//     name: "Aspirin 75mg",
+//     category: "Cardiovascular",
+//     manufacturer: "HeartCare",
+//     batchNumber: "ASP2024005",
+//     quantity: 3,
+//     minStock: 30,
+//     expiryDate: "2025-11-30",
+//     price: 8.9,
+//     status: "Critical",
+//   },
+// ];
 
 export default function InventoryPage() {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
@@ -375,7 +375,10 @@ export default function InventoryPage() {
     } catch (error) {
       toast({
         title: "Operation Failed",
-        description: "Could not save changes to API",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Could not save changes to API",
         variant: "destructive",
       });
     }
