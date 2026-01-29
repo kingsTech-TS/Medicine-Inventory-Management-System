@@ -24,6 +24,7 @@ import {
   Clock,
   CheckCheck,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function MessagesPage() {
   const [contacts, setContacts] = useState<UserProfile[]>([]);
@@ -36,6 +37,7 @@ export default function MessagesPage() {
   const [sending, setSending] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [showChatOnMobile, setShowChatOnMobile] = useState(false);
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -151,9 +153,14 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex gap-6 min-h-0">
+      <div className="flex-1 flex gap-6 min-h-0 relative">
         {/* Contacts Sidebar */}
-        <Card className="w-80 border-0 shadow-lg bg-white/80 backdrop-blur-sm flex flex-col">
+        <Card
+          className={cn(
+            "w-full md:w-80 border-0 shadow-lg bg-white/80 backdrop-blur-sm flex flex-col transition-all duration-300",
+            showChatOnMobile && "hidden md:flex",
+          )}
+        >
           <CardHeader className="pb-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -178,12 +185,16 @@ export default function MessagesPage() {
                 filteredContacts.map((contact) => (
                   <button
                     key={contact.username}
-                    onClick={() => setSelectedContact(contact)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${
+                    onClick={() => {
+                      setSelectedContact(contact);
+                      setShowChatOnMobile(true);
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200",
                       selectedContact?.username === contact.username
                         ? "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200"
-                        : "hover:bg-gray-50 text-gray-700"
-                    }`}
+                        : "hover:bg-gray-50 text-gray-700",
+                    )}
                   >
                     <div className="relative">
                       <div className="w-11 h-11 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold">
@@ -213,13 +224,26 @@ export default function MessagesPage() {
         </Card>
 
         {/* Chat Area */}
-        <Card className="flex-1 border-0 shadow-lg bg-white/80 backdrop-blur-sm flex flex-col">
+        <Card
+          className={cn(
+            "flex-1 border-0 shadow-lg bg-white/80 backdrop-blur-sm flex flex-col transition-all duration-300",
+            !showChatOnMobile && "hidden md:flex",
+          )}
+        >
           {selectedContact ? (
             <>
               <CardHeader className="border-b border-gray-100/50 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="md:hidden -ml-2 text-gray-400"
+                      onClick={() => setShowChatOnMobile(false)}
+                    >
+                      <User className="w-5 h-5" />
+                    </Button>
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold shrink-0">
                       {selectedContact.firstName?.[0]}
                       {selectedContact.lastName?.[0]}
                     </div>

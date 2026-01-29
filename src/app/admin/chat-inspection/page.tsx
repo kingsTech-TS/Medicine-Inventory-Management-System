@@ -111,7 +111,7 @@ export default function AdminChatInspectionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50">
       <Sidebar />
       <main className="min-h-screen pt-16 md:pt-0 md:pl-64">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -138,8 +138,8 @@ export default function AdminChatInspectionPage() {
                   Select two users to view their private chat logs
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row items-end gap-4">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row items-stretch md:items-end gap-4">
                   <div className="flex-1 space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase">
                       First User
@@ -158,7 +158,7 @@ export default function AdminChatInspectionPage() {
                     </Select>
                   </div>
 
-                  <div className="pb-2 text-gray-300">
+                  <div className="hidden md:block pb-2 text-gray-300">
                     <ArrowRightLeft className="w-5 h-5" />
                   </div>
 
@@ -183,7 +183,7 @@ export default function AdminChatInspectionPage() {
                   <Button
                     onClick={handleInspect}
                     disabled={inspecting || loading || !user1 || !user2}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 px-8 h-10"
+                    className="w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 px-8 h-10 mt-2 md:mt-0 grow-0 shrink-0"
                   >
                     <Eye className="w-4 h-4 mr-2" />
                     {inspecting ? "Loading..." : "Inspect Log"}
@@ -211,7 +211,7 @@ export default function AdminChatInspectionPage() {
                       </div>
                     </div>
                   </div>
-                  <ScrollArea className="flex-1 max-h-[600px]">
+                  <ScrollArea className="flex-1 max-h-[500px] md:max-h-[600px]">
                     <div className="p-6 space-y-4">
                       {messages.map((msg, i) => (
                         <div key={i} className="flex flex-col gap-1">

@@ -299,7 +299,7 @@ export default function AlertsPage() {
                       {criticalCount}
                     </p>
                   </div>
-                  <div className="p-3 rounded-lg bg-gradient-to-r from-red-500 to-red-600">
+                  <div className="p-3 rounded-lg bg-linear-to-r from-red-500 to-red-600">
                     <Zap className="w-6 h-6 text-white" />
                   </div>
                 </div>
@@ -323,7 +323,7 @@ export default function AlertsPage() {
                       {lowStockCount}
                     </p>
                   </div>
-                  <div className="p-3 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600">
+                  <div className="p-3 rounded-lg bg-linear-to-r from-orange-500 to-orange-600">
                     <AlertTriangle className="w-6 h-6 text-white" />
                   </div>
                 </div>
@@ -347,7 +347,7 @@ export default function AlertsPage() {
                       {expiringCount}
                     </p>
                   </div>
-                  <div className="p-3 rounded-lg bg-gradient-to-r from-yellow-500 to-yellow-600">
+                  <div className="p-3 rounded-lg bg-linear-to-r from-yellow-500 to-yellow-600">
                     <Calendar className="w-6 h-6 text-white" />
                   </div>
                 </div>

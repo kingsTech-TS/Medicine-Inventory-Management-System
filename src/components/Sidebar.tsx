@@ -26,7 +26,6 @@ import { cn } from "@/lib/utils";
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,40 +118,19 @@ export default function Sidebar() {
     navItems.find((item) => pathname.startsWith(item.path))?.id ?? "overview";
 
   const NavContent = () => (
-    <div
-      className={cn("flex flex-col h-full py-6", collapsed ? "px-0" : "px-4")}
-    >
+    <div className="flex flex-col h-full py-6 px-4">
       {/* Logo */}
-      <div
-        className={cn(
-          "flex items-center mb-10 px-2 h-10",
-          collapsed ? "justify-center" : "space-x-3",
-        )}
-      >
+      <div className="flex items-center mb-10 px-2 h-10 space-x-3">
         <div className="p-2 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/20 shrink-0">
           <Activity className="w-6 h-6 text-white" />
         </div>
-        <AnimatePresence>
-          {!collapsed && (
-            <motion.h1
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: "auto" }}
-              exit={{ opacity: 0, width: 0 }}
-              className="text-xl font-serif font-bold text-gray-800 whitespace-nowrap overflow-hidden"
-            >
-              MediTrack
-            </motion.h1>
-          )}
-        </AnimatePresence>
+        <h1 className="text-xl font-serif font-bold text-gray-800 whitespace-nowrap overflow-hidden">
+          MediTrack
+        </h1>
       </div>
 
       {/* Navigation Items */}
-      <nav
-        className={cn(
-          "flex-1 space-y-2 custom-scrollbar",
-          collapsed ? "overflow-visible" : "overflow-y-auto pr-2",
-        )}
-      >
+      <nav className="flex-1 space-y-2 custom-scrollbar overflow-y-auto pr-2">
         {loading ? (
           <div className="space-y-2">
             {[1, 2, 3, 4].map((i) => (
@@ -171,15 +149,10 @@ export default function Sidebar() {
                 setMobileOpen(false);
               }}
               className={cn(
-                "flex items-center w-full transition-all duration-200 group relative",
-                collapsed
-                  ? "justify-center h-12"
-                  : "px-4 py-3 space-x-3 rounded-xl",
+                "flex items-center w-full px-4 py-3 space-x-3 rounded-xl transition-all duration-200 group relative",
                 activeTab === item.id
                   ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
                   : "text-gray-500 hover:bg-emerald-50 hover:text-emerald-600",
-                collapsed && activeTab === item.id && "rounded-none",
-                !collapsed && "rounded-xl",
               )}
             >
               <item.icon
@@ -190,17 +163,9 @@ export default function Sidebar() {
                     : "group-hover:scale-110 transition-transform",
                 )}
               />
-              {!collapsed && (
-                <span className="font-medium whitespace-nowrap">
-                  {item.label}
-                </span>
-              )}
-              {collapsed && (
-                <div className="absolute left-full ml-3 bg-gray-900 text-white px-3 py-1.5 rounded-lg text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-all translate-x-1 group-hover:translate-x-0 z-50 whitespace-nowrap shadow-xl">
-                  {item.label}
-                  <div className="absolute top-1/2 -left-1 -translate-y-1/2 border-y-4 border-y-transparent border-r-4 border-r-gray-900" />
-                </div>
-              )}
+              <span className="font-medium whitespace-nowrap">
+                {item.label}
+              </span>
             </button>
           ))
         )}
@@ -214,56 +179,26 @@ export default function Sidebar() {
             setMobileOpen(false);
           }}
           className={cn(
-            "flex items-center w-full transition-all duration-200 group relative",
-            collapsed
-              ? "justify-center h-12"
-              : "px-4 py-3 space-x-3 rounded-xl",
+            "flex items-center w-full px-4 py-3 space-x-3 rounded-xl transition-all duration-200 group relative",
             pathname === "/profile"
               ? "bg-gray-100 text-gray-900 shadow-sm"
               : "text-gray-500 hover:bg-gray-50 hover:text-gray-800",
           )}
         >
           <Settings className="w-5 h-5 group-hover:rotate-45 transition-transform" />
-          {!collapsed && <span className="font-medium">Settings</span>}
-          {collapsed && (
-            <div className="absolute left-full ml-3 bg-gray-900 text-white px-3 py-1.5 rounded-lg text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-all translate-x-1 group-hover:translate-x-0 z-50 whitespace-nowrap shadow-xl">
-              Settings
-              <div className="absolute top-1/2 -left-1 -translate-y-1/2 border-y-4 border-y-transparent border-r-4 border-r-gray-900" />
-            </div>
-          )}
+          <span className="font-medium">Settings</span>
         </button>
 
         <button
           onClick={() => router.push("/")}
           className={cn(
-            "flex items-center w-full transition-all duration-200 group relative text-gray-500 hover:bg-red-50 hover:text-red-600",
-            collapsed
-              ? "justify-center h-12"
-              : "px-4 py-3 space-x-3 rounded-xl",
+            "flex items-center w-full px-4 py-3 space-x-3 rounded-xl transition-all duration-200 group relative text-gray-500 hover:bg-red-50 hover:text-red-600",
           )}
         >
           <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          {!collapsed && <span className="font-medium">Logout</span>}
-          {collapsed && (
-            <div className="absolute left-full ml-3 bg-gray-900 text-white px-3 py-1.5 rounded-lg text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-all translate-x-1 group-hover:translate-x-0 z-50 whitespace-nowrap shadow-xl">
-              Logout
-              <div className="absolute top-1/2 -left-1 -translate-y-1/2 border-y-4 border-y-transparent border-r-4 border-r-gray-900" />
-            </div>
-          )}
+          <span className="font-medium">Logout</span>
         </button>
       </div>
-
-      {/* Collapse Toggle (Desktop only) */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="hidden md:flex mt-4 items-center justify-center w-full h-8 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors"
-      >
-        {collapsed ? (
-          <ChevronRight className="w-4 h-4" />
-        ) : (
-          <ChevronLeft className="w-4 h-4" />
-        )}
-      </button>
     </div>
   );
 
@@ -281,12 +216,7 @@ export default function Sidebar() {
       </div>
 
       {/* Desktop Sidebar (Fixed left) */}
-      <aside
-        className={cn(
-          "hidden md:block fixed left-0 top-0 h-screen bg-white border-r border-gray-100 z-40 transition-all duration-300 ease-in-out",
-          collapsed ? "w-20" : "w-64",
-        )}
-      >
+      <aside className="hidden md:block fixed left-0 top-0 h-screen bg-white border-r border-gray-100 z-40 w-64 shadow-sm">
         <NavContent />
       </aside>
 
